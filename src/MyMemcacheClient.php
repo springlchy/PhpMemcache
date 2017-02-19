@@ -270,9 +270,9 @@ class MyMemcacheClient {
      * @return void 没有返回值
      */
     public function close() {
-        if ($this->socket != null) {
+        if ($this->socket != false) {
             socket_close($this->socket);
-            $this->socket = null;
+            $this->socket = false;
         }
     }
 }
