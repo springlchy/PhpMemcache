@@ -42,6 +42,13 @@ try {
     $memcache->prepend("a", "Prepended content, ");
     echo $memcache->get("a"), PHP_EOL;
 
+    $memcache->set("b", "This is b");
+
+    $memcache->set("c", "This is c");
+
+    $arr = $memcache->get(['a', 'b', 'c']);
+    print_r($arr);
+
     $memcache->close();
 
 } catch (Exception $e) {

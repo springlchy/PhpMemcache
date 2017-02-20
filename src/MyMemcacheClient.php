@@ -113,10 +113,14 @@ class MyMemcacheClient {
     }
     /**
      * 获取一个键的值
-     * @param  string $key 键
-     * @return string|boolean    值, false表示没有这个键或者已过期
+     * @param  string|array $key 键
+     * @return string|boolean|array    值, false表示没有这个键或者已过期。当$key时数组时，返回关联数组。见 multiGet()函数。
      */
     public function get($key) {
+        if (is_array($key)) {
+            return call_user_func_array([$this, 'multiGet'], $key);
+        }
+
         $data = sprintf("get %s\r\n", $key);
 
         $result = socket_write($this->socket, $data, strlen($data));
@@ -155,6 +159,50 @@ class MyMemcacheClient {
         } else {
             return false;
         }
+    }
+
+    /**
+     * 一次获取多个key的值
+     * @param  [type] $key1 第一个key
+     * @param  [type] $keys 剩余参数
+     * @return array        关联数组，结果格式 array('key1' => 'value1', 'key2' => 'value2')
+     */
+    public function multiGet($key1, ...$keys) {
+        if (is_array($key1)) {
+            return call_user_func_array([$this, 'multiGet'], $key1);
+        }
+
+        array_unshift($keys, $key1);
+        array_unshift($keys, "get");
+
+        $data = implode(' ', $keys) . "\r\n";
+
+        $result = socket_write($this->socket, $data, strlen($data));
+        if (false === $result) {
+            $this->setSocketError();
+            return false;
+        }
+
+        $values = [];
+        while (true) {
+            $line = socket_read($this->socket, 1024, PHP_NORMAL_READ);
+            if (strncmp($line, "END", 3) === 0) {
+                socket_read($this->socket, 1, PHP_BINARY_READ);
+                break;
+            }
+
+            if (!strncmp($line, "VALUES", 5)) {
+                $line = rtrim($line, "\r\n");
+                $arr = explode(' ', $line);
+
+                $dataLen = intval(end($arr));
+                $response = socket_read($this->socket, $dataLen, PHP_BINARY_READ);
+                $values[$arr[1]] = $response;
+                socket_read($this->socket, 2, PHP_BINARY_READ);
+            }
+        }
+
+        return $values;
     }
 
     /**
@@ -243,7 +291,7 @@ class MyMemcacheClient {
      * @return boolean|array 失败，返回false，成功，返回数组，格式 key => value
      */
     public function stats() {
-        $data = $arg ? "stats $arg\r\n" : "stats\r\n";
+        $data = "stats\r\n";
 
         $result = socket_write($this->socket, $data, strlen($data));
         if ($result === false) {
