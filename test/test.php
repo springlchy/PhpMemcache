@@ -36,6 +36,12 @@ try {
         echo $k,": ", $v, PHP_EOL;
     }
 
+    $memcache->append("a", ", appended content");
+    echo $memcache->get("a"), PHP_EOL;
+
+    $memcache->prepend("a", "Prepended content, ");
+    echo $memcache->get("a"), PHP_EOL;
+
     $memcache->close();
 
 } catch (Exception $e) {

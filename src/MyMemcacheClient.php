@@ -7,7 +7,6 @@ class MyMemcacheClient {
     private $error;
 
     public function __construct() {
-
     }
 
     public function __destruct() {
@@ -105,6 +104,13 @@ class MyMemcacheClient {
         return $this->_set_add_replace('replace', $key, $value, $ttl);
     }
 
+    public function append($key, $value, $ttl = 10) {
+        return $this->_set_add_replace('append', $key, $value, $ttl);
+    }
+
+    public function prepend($key, $value, $ttl = 10) {
+        return $this->_set_add_replace('prepend', $key, $value, $ttl);
+    }
     /**
      * 获取一个键的值
      * @param  string $key 键
