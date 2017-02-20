@@ -36,19 +36,23 @@ try {
         echo $k,": ", $v, PHP_EOL;
     }
 
-    $memcache->append("a", ", appended content");
+    $memcache->append("a", ", appended consdfsdftent");
     echo $memcache->get("a"), PHP_EOL;
 
-    $memcache->prepend("a", "Prepended content, ");
+    $memcache->prepend("a", "Prepended condfdsftent, ");
     echo $memcache->get("a"), PHP_EOL;
 
     $memcache->set("b", "This is b");
 
     $memcache->set("c", "This is c");
 
-    $arr = $memcache->get(['a', 'b', 'c']);
-    print_r($arr);
+    //$arr = $memcache->get(['a', 'b', 'c']);
+    //print_r($arr);
 
+    $result = $memcache->cas('a', "dfddsfgddsfsfd");
+
+    echo $result, PHP_EOL;
+    echo $memcache->getLastError();
     $memcache->close();
 
 } catch (Exception $e) {

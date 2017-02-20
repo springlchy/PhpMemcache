@@ -162,9 +162,9 @@ class MyMemcacheClient {
     }
 
     /**
-     * 一次获取多个key的值
-     * @param  [type] $key1 第一个key
-     * @param  [type] $keys 剩余参数
+     * 一次获取多个key的值, get key1 key2 key3 ...
+     * @param  string $key1 第一个key
+     * @param  string $keys 剩余参数
      * @return array        关联数组，结果格式 array('key1' => 'value1', 'key2' => 'value2')
      */
     public function multiGet($key1, ...$keys) {
@@ -191,7 +191,7 @@ class MyMemcacheClient {
                 break;
             }
 
-            if (!strncmp($line, "VALUES", 5)) {
+            if (!strncmp($line, "VALUE", 5)) {
                 $line = rtrim($line, "\r\n");
                 $arr = explode(' ', $line);
 
@@ -203,6 +203,52 @@ class MyMemcacheClient {
         }
 
         return $values;
+    }
+
+    /**
+     * 实现cas命令
+     * @param  [type]  $key   [description]
+     * @param  [type]  $value [description]
+     * @param  integer $ttl   [description]
+     * @return [type]         [description]
+     */
+    public function cas($key, $value, $ttl = 10) {
+        $getsCommand = "gets $key\r\n";
+        $result = socket_write($this->socket, $getsCommand, strlen($getsCommand));
+        if ($result === false) {
+            $this->setSocketError();
+            return -1;
+        }
+
+        $line = socket_read($this->socket, 1024, PHP_NORMAL_READ);
+        if (!strncmp($line, "VALUE", 5)) {
+            $arr = explode(' ', rtrim($line, "\r\n"));
+            $casToken = end($arr);
+            $response = socket_read($this->socket, intval($arr[3])+8, PHP_BINARY_READ);
+
+            $casCommand = sprintf("cas %s 0 %d %d %s\r\n%s\r\n", $key, $ttl, strlen($value), $casToken, $value);
+
+            $result = socket_write($this->socket, $casCommand, strlen($casCommand));
+            if ($result === false) {
+                $this->setSocketError();
+                return -1;
+            }
+
+            $response = socket_read($this->socket, 1024, PHP_NORMAL_READ);
+            socket_read($this->socket, 1, PHP_BINARY_READ);
+
+            if (strncmp($response, "STORED", 6) === 0) {
+                return 0; // STORED
+            } elseif (strncmp($response, "ERROR", 5) === 0) {
+                return -3; // ERROR
+            } elseif (strncmp($response, "EXISTS", 6) === 0) {
+                return 1; // EXISTS
+            } else {
+                return -2; // NOT_FOUND
+            }
+        } else {
+            return -2; // NOT_FOUND
+        }
     }
 
     /**
