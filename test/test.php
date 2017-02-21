@@ -46,8 +46,8 @@ try {
 
     $memcache->set("c", "This is c");
 
-    //$arr = $memcache->get(['a', 'b', 'c']);
-    //print_r($arr);
+    $arr = $memcache->get(['a', 'b', 'c']);
+    print_r($arr);
 
     $result = $memcache->cas('a', "dfddsfgddsfsfd");
 

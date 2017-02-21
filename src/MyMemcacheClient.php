@@ -140,7 +140,7 @@ class MyMemcacheClient {
 
         /** 获取成功，第一行返回 VALUE <key> <flags> <bytes>\r\n */
         if (!strncmp($line1, "VALUE", 5)) {
-            $line1 = rtrim($line1, "\r\n");
+            $line1 = rtrim($line1, "\r");
             $arr = explode(' ', $line1);
             /** 获取数据长度 */
             $dataLen = intval(end($arr));
@@ -186,13 +186,13 @@ class MyMemcacheClient {
         $values = [];
         while (true) {
             $line = socket_read($this->socket, 1024, PHP_NORMAL_READ);
+            socket_read($this->socket, 1, PHP_BINARY_READ);
             if (strncmp($line, "END", 3) === 0) {
-                socket_read($this->socket, 1, PHP_BINARY_READ);
                 break;
             }
 
             if (!strncmp($line, "VALUE", 5)) {
-                $line = rtrim($line, "\r\n");
+                $line = rtrim($line, "\r");
                 $arr = explode(' ', $line);
 
                 $dataLen = intval(end($arr));
@@ -221,10 +221,12 @@ class MyMemcacheClient {
         }
 
         $line = socket_read($this->socket, 1024, PHP_NORMAL_READ);
+        socket_read($this->socket, 1, PHP_BINARY_READ);
+
         if (!strncmp($line, "VALUE", 5)) {
-            $arr = explode(' ', rtrim($line, "\r\n"));
+            $arr = explode(' ', rtrim($line, "\r"));
             $casToken = end($arr);
-            $response = socket_read($this->socket, intval($arr[3])+8, PHP_BINARY_READ);
+            $response = socket_read($this->socket, intval($arr[3]) + 7, PHP_BINARY_READ);
 
             $casCommand = sprintf("cas %s 0 %d %d %s\r\n%s\r\n", $key, $ttl, strlen($value), $casToken, $value);
 
